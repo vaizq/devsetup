@@ -39,4 +39,18 @@ else
 	go version
 fi
 
+if ! command_exists npm; then
+	echo "### INSTALLING npm and node ###"
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+	\. "$HOME/.nvm/nvm.sh"
+	nvm install 22
+else
+	echo "npm is already installed"
+fi
+
+npm i -g vscode-langservers-extracted
+npm i -g typescript typescript-language-server
+
+
+
 echo "### DONE! Open a new terminal or call$ source ~/.bashrc to finish setup ###"
