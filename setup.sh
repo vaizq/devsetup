@@ -1,56 +1,66 @@
 #!/bin/bash
 
+set -e
+
 command_exists() {
-	command -v "$1" >/dev/null
+	command -v "$1" >/dev/null 2>&1
 }
 
 echo "### INSTALL NECESSARY PACKAGES ###"
 sudo apt update
-sudo apt install curl git build-essential ripgrep unzip xclip
+sudo apt install -y curl git build-essential ripgrep unzip xclip
 
-if ! command_exists nvim; then
-	echo "\n### INSTALL NEOVIM ###"
+NVIM_DIR="$HOME/.local/nvim-linux-x86_64"
+NVIM_BIN="$NVIM_DIR/bin/nvim"
+
+if ! command_exists nvim || [ ! -x "$NVIM_BIN" ]; then
+	echo "### INSTALL NEOVIM ###"
 	curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-	sudo rm -rf /opt/nvim-linux-x86_64
-	sudo mkdir -p /opt/nvim-linux-x86_64
-	sudo chmod a+rX /opt/nvim-linux-x86_64
-	sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-	echo "export PATH=\"\$PATH:/opt/nvim-linux-x86_64/bin\"" >> ~/.bashrc
+	mkdir -p "$NVIM_DIR"
+	tar -C "$HOME/.local" -xzf nvim-linux-x86_64.tar.gz
 	rm nvim-linux-x86_64.tar.gz
+
+	if ! grep -q "$NVIM_DIR/bin" ~/.bashrc; then
+		echo "export PATH=\"$NVIM_DIR/bin:\$PATH\"" >> ~/.bashrc
+	fi
 else
-	echo "nvim is already installed"
+	echo "Neovim already installed at $NVIM_BIN"
 	nvim --version
 fi
 
 echo "### INSTALL kickstart.nvim ###"
-sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/
-mkdir -p ~/.config/nvim
-curl https://raw.githubusercontent.com/vaizq/kickstart.nvim/refs/heads/master/init.lua >> ~/.config/nvim/init.lua
+NVIM_CONFIG_DIR="$HOME/.config/nvim"
+INIT_LUA="$NVIM_CONFIG_DIR/init.lua"
+if [ ! -f "$INIT_LUA" ]; then
+	mkdir -p "$NVIM_CONFIG_DIR"
+	curl -o "$INIT_LUA" https://raw.githubusercontent.com/vaizq/kickstart.nvim/refs/heads/master/init.lua
+fi
 
 if ! command_exists go; then
 	echo "### INSTALL GO 1.24.4 ###"
 	curl -LO https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
 	sudo rm -rf /usr/local/go
 	sudo tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz
-	echo "export PATH=\"\$PATH:/usr/local/go/bin\"" >> ~/.bashrc
 	rm go1.24.4.linux-amd64.tar.gz
+
+	if ! grep -q "/usr/local/go/bin" ~/.bashrc; then
+		echo "export PATH=\"/usr/local/go/bin:\$PATH\"" >> ~/.bashrc
+	fi
 else
-	echo "go is already installed"
+	echo "Go already installed"
 	go version
 fi
 
 if ! command_exists npm; then
 	echo "### INSTALLING npm and node ###"
 	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-	\. "$HOME/.nvm/nvm.sh"
+	export NVM_DIR="$HOME/.nvm"
+	. "$NVM_DIR/nvm.sh"
 	nvm install 22
 else
-	echo "npm is already installed"
+	echo "npm already installed"
 fi
 
-npm i -g vscode-langservers-extracted
-npm i -g typescript typescript-language-server
+npm i -g vscode-langservers-extracted typescript typescript-language-server
 
-
-
-echo "### DONE! Open a new terminal or call$ source ~/.bashrc to finish setup ###"
+echo "### DONE! Open a new terminal or run: source ~/.bashrc ###"
