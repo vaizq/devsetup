@@ -46,6 +46,10 @@ if ! command_exists go; then
 	if ! grep -q "/usr/local/go/bin" ~/.bashrc; then
 		echo "export PATH=\"/usr/local/go/bin:\$PATH\"" >> ~/.bashrc
 	fi
+
+	if ! grep -q "HOME/go/bin" ~/.bashrc; then
+		echo "export PATH=\"\$HOME/go/bin:\$PATH\"" >> ~/.bashrc
+	fi
 else
 	echo "Go already installed"
 	go version
